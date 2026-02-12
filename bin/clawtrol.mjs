@@ -229,6 +229,31 @@ function runBuild() {
   child.on('exit', (code) => process.exit(code ?? 0));
 }
 
+// ── Daemon Commands ──────────────────────────────────────────────────
+
+function runDaemon(action) {
+  const daemonPath = resolve(process.cwd(), 'bin', 'daemon.mjs');
+  if (!existsSync(daemonPath)) {
+    // Fallback: try relative to this CLI (for global install)
+    const fallback = resolve(__dirname, 'daemon.mjs');
+    if (!existsSync(fallback)) {
+      print(red('  Error: daemon.mjs not found. Are you in a Clawtrol project directory?'));
+      process.exit(1);
+    }
+    const child = spawn('node', [fallback, action, ...process.argv.slice(3)], {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    });
+    child.on('exit', (code) => process.exit(code ?? 0));
+    return;
+  }
+  const child = spawn('node', [daemonPath, action, ...process.argv.slice(3)], {
+    cwd: process.cwd(),
+    stdio: 'inherit',
+  });
+  child.on('exit', (code) => process.exit(code ?? 0));
+}
+
 // ── Plugin Commands ──────────────────────────────────────────────────
 
 function readConfigPlugins() {
@@ -387,12 +412,33 @@ switch (command) {
     runPluginsList();
     break;
 
+  case 'start':
+  case 'stop':
+  case 'restart':
+  case 'status':
+  case 'logs':
+    runDaemon(command);
+    break;
+
   default:
     showBanner();
     print(bold('  Usage:'));
+    print();
+    print(dim('  Setup:'));
     print(`    clawtrol ${green('init')}              Create a new Clawtrol project`);
+    print();
+    print(dim('  Development:'));
     print(`    clawtrol ${green('dev')}               Start the dev server`);
     print(`    clawtrol ${green('build')}             Build for production`);
+    print();
+    print(dim('  Daemon (pm2):'));
+    print(`    clawtrol ${green('start')}             Build & start in background`);
+    print(`    clawtrol ${green('stop')}              Stop the daemon`);
+    print(`    clawtrol ${green('restart')}           Restart the daemon`);
+    print(`    clawtrol ${green('status')}            Check if running`);
+    print(`    clawtrol ${green('logs')}              View pm2 logs`);
+    print();
+    print(dim('  Plugins:'));
     print(`    clawtrol ${green('add')} ${dim('<plugin>')}     Install a plugin`);
     print(`    clawtrol ${green('remove')} ${dim('<plugin>')}  Remove a plugin`);
     print(`    clawtrol ${green('plugins')}           List installed plugins`);

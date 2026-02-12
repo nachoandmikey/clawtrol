@@ -43,23 +43,29 @@ Built for headless setups (Mac minis, VPS, Raspberry Pi) but works anywhere Open
 ## 🚀 Quick Start
 
 ```bash
-npx clawtrol init
+npm install -g clawtrol
+clawtrol init
 cd clawtrol
-npm run dev
+clawtrol start
 ```
 
 Open [http://localhost:4781](http://localhost:4781).
 
 > The setup wizard walks you through project name, modules, theme, and API config — then scaffolds everything for you.
 
-### Manual Setup
+### Without global install
+```bash
+npx clawtrol init
+cd clawtrol
+npm start
+```
 
+### From source
 ```bash
 git clone https://github.com/nachoandmikey/clawtrol.git
 cd clawtrol
 npm install
-cp clawtrol.config.example.ts clawtrol.config.ts
-npm run dev
+clawtrol start
 ```
 
 ## Running
@@ -71,14 +77,16 @@ npm run dev
 
 ### Production (daemon via pm2)
 ```bash
-npm start          # build + start on port 4781 (or next available)
-npm run status     # check if running
-npm run logs       # view logs
-npm run restart    # restart
-npm stop           # stop and remove from pm2
+clawtrol start     # build + start on port 4781 (or next available)
+clawtrol status    # check if running
+clawtrol logs      # view logs
+clawtrol restart   # restart
+clawtrol stop      # stop and remove from pm2
 ```
 
 > pm2 is included with OpenClaw. Clawtrol auto-detects a free port if 4781 is taken.
+> 
+> Also works as npm scripts: `npm start`, `npm stop`, `npm run status`, etc.
 
 ## ✨ Features
 
