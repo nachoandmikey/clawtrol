@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execSafe } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +11,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 });
     }
 
-    // Send via openclaw CLI
-    const escapedMessage = message.replace(/"/g, '\\"').replace(/\$/g, '\\$');
-    const targetArg = target ? `--to "${target}"` : '';
+    // Send via openclaw CLI — using execFile (no shell interpolation)
+    const args = ['send'];
+    if (target) {
+      args.push('--to', target);
+    }
+    args.push(message);
     
-    await execAsync(`openclaw send ${targetArg} "${escapedMessage}"`, { timeout: 30000 });
+    await execSafe('openclaw', args);
     
     return NextResponse.json({ success: true });
   } catch (error) {

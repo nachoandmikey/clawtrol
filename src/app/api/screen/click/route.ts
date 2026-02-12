@@ -1,80 +1,97 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { execSafe, validateInput, NUMERIC } from '@/lib/security';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Run an AppleScript safely via stdin (no shell interpolation).
+ */
+async function runAppleScript(script: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const child = execFile('osascript', ['-'], { timeout: 10000 }, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+    child.stdin?.write(script);
+    child.stdin?.end();
+  });
+}
 
 export async function POST(request: Request) {
   try {
     const { x, y, type = 'click', text } = await request.json();
 
+    // Validate coordinates are numeric when provided
+    const safeX = x != null ? Math.round(Number(x)) : 0;
+    const safeY = y != null ? Math.round(Number(y)) : 0;
+    if ((x != null && isNaN(safeX)) || (y != null && isNaN(safeY))) {
+      return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 });
+    }
+
     switch (type) {
       case 'click':
-        await execAsync(`cliclick c:${Math.round(x)},${Math.round(y)}`);
+        await execSafe('cliclick', [`c:${safeX},${safeY}`]);
         break;
 
       case 'hover':
-        await execAsync(`cliclick m:${Math.round(x)},${Math.round(y)}`);
+        await execSafe('cliclick', [`m:${safeX},${safeY}`]);
         break;
 
       case 'doubleclick':
-        await execAsync(`cliclick dc:${Math.round(x)},${Math.round(y)}`);
+        await execSafe('cliclick', [`dc:${safeX},${safeY}`]);
         break;
 
       case 'rightclick':
-        await execAsync(`cliclick rc:${Math.round(x)},${Math.round(y)}`);
+        await execSafe('cliclick', [`rc:${safeX},${safeY}`]);
         break;
 
       case 'type':
-        // Just type text at current cursor position (no click)
         if (text) {
-          // Escape special chars for shell
-          const escaped = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-          await execAsync(`cliclick t:"${escaped}"`);
+          await execSafe('cliclick', [`t:${text}`]);
         }
         break;
 
       case 'clicktype':
-        // Click at position then type text
         if (text) {
-          await execAsync(`cliclick c:${Math.round(x)},${Math.round(y)}`);
+          await execSafe('cliclick', [`c:${safeX},${safeY}`]);
           await new Promise(r => setTimeout(r, 150));
-          const esc = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-          await execAsync(`cliclick t:"${esc}"`);
+          await execSafe('cliclick', [`t:${text}`]);
         }
         break;
 
       case 'key':
-        // Send a named key press (return, escape, space, tab, delete, arrow-up, etc.)
         if (text) {
-          await execAsync(`cliclick kp:${text}`);
+          // Validate key name is safe (alphanumeric + dashes)
+          const safeKey = text.replace(/[^a-zA-Z0-9-]/g, '');
+          await execSafe('cliclick', [`kp:${safeKey}`]);
         }
         break;
 
       case 'shortcut':
-        // Keyboard shortcut via AppleScript (e.g. "cmd+a", "cmd+c")
         if (text) {
           const parts = text.split('+');
-          const key = parts.pop();
+          const key = parts.pop()?.replace(/[^a-zA-Z0-9]/g, '') || '';
           const modifiers = parts.map((m: string) => {
             const map: Record<string, string> = { cmd: 'command', ctrl: 'control', alt: 'option', shift: 'shift' };
-            return map[m.toLowerCase()] || m;
-          });
+            return map[m.toLowerCase()] || '';
+          }).filter(Boolean);
           const modStr = modifiers.map((m: string) => `${m} down`).join(', ');
+          // Use stdin to avoid shell injection in osascript
           const script = modStr
             ? `tell application "System Events" to keystroke "${key}" using {${modStr}}`
             : `tell application "System Events" to keystroke "${key}"`;
-          await execAsync(`osascript -e '${script}'`);
+          await runAppleScript(script);
         }
         break;
 
       case 'scroll':
-        // Scroll using AppleScript
         if (text) {
-          const amount = text === 'up' ? 5 : -5;
-          await execAsync(`osascript -e 'tell application "System Events" to key code ${text === 'up' ? 126 : 125}'`);
+          const keyCode = text === 'up' ? '126' : '125';
+          await runAppleScript(`tell application "System Events" to key code ${keyCode}`);
         }
         break;
     }
