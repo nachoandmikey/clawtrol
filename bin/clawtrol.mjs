@@ -66,7 +66,7 @@ async function runInit() {
 
   try {
     // 1. Project name
-    const projectName = (await ask(rl, `${bold('Project name')} ${dim('(my-dashboard)')}: `)).trim() || 'my-dashboard';
+    const projectName = (await ask(rl, `${bold('Project name')} ${dim('(clawtrol)')}: `)).trim() || 'clawtrol';
 
     // 2. Dashboard title
     const title = (await ask(rl, `${bold('Dashboard title')} ${dim('(Clawtrol Center)')}: `)).trim() || 'Clawtrol Center';

@@ -44,7 +44,7 @@ Built for headless setups (Mac minis, VPS, Raspberry Pi) but works anywhere Open
 
 ```bash
 npx clawtrol init
-cd my-dashboard
+cd clawtrol
 npm run dev
 ```
 
