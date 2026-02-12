@@ -13,7 +13,6 @@ Built for headless setups (Mac minis, VPS, Raspberry Pi) but works anywhere Open
 ![Sessions](./docs/screenshot-sessions.png)
 
 **Tasks** — kanban board with project filters
-![Tasks](./docs/screenshot-tasks.png)
 
 **Screen** — remote screen viewer with click interaction
 ![Screen](./docs/screenshot-screen.png)
