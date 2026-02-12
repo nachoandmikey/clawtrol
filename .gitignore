@@ -42,3 +42,5 @@ next-env.d.ts
 node_modules/
 .next/
 pnpm-lock.yaml
+.clawtrol.json
+.clawtrol.pid.json

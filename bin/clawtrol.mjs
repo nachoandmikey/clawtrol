@@ -127,13 +127,21 @@ async function runInit() {
     print(dim('  Scaffolding project...'));
     mkdirSync(dest, { recursive: true });
 
-    // Copy template files (exclude bin/, node_modules/, .git/, .next/)
-    const SKIP = new Set(['bin', 'node_modules', '.git', '.next']);
+    // Copy template files (exclude node_modules/, .git/, .next/)
+    const SKIP = new Set(['node_modules', '.git', '.next']);
     const entries = readdirSync(PKG_ROOT);
     for (const entry of entries) {
       if (SKIP.has(entry)) continue;
       const src = join(PKG_ROOT, entry);
       const dst = join(dest, entry);
+
+      // Only copy daemon runtime script from bin/ (not the CLI itself)
+      if (entry === 'bin') {
+        mkdirSync(dst, { recursive: true });
+        cpSync(join(src, 'daemon.mjs'), join(dst, 'daemon.mjs'));
+        continue;
+      }
+
       cpSync(src, dst, { recursive: true });
     }
 

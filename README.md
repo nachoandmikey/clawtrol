@@ -28,6 +28,18 @@ cp clawtrol.config.example.ts clawtrol.config.ts
 npm run dev
 ```
 
+## Running
+
+### Development
+npm run dev
+
+### Production (daemon via pm2)
+npm start          # build + start on port 3001 (or next available)
+npm run status     # check if running
+npm run logs       # view logs
+npm run restart    # restart
+npm stop           # stop and remove from pm2
+
 ## ✨ Features
 
 | Module | What it does |
