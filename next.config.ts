@@ -1,17 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      {
-        source: "/api/:path*",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET, POST, OPTIONS" },
-        ],
-      },
-    ];
-  },
+  // CORS: If cross-origin access is needed, configure allowedOrigins in
+  // clawtrol.config.ts and use src/middleware.ts to set headers dynamically.
 };
 
 export default nextConfig;
