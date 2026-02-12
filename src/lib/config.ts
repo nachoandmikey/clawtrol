@@ -11,9 +11,17 @@ export type ModuleId =
   | 'network'
   | 'subagents';
 
+export interface WidgetConfig {
+  module: string;
+  widget: string;
+  size: 'sm' | 'md' | 'lg';
+}
+
 export interface ClawtrolConfig {
   title?: string;
   modules?: ModuleId[];
+  widgets?: WidgetConfig[];
+  plugins?: string[];
   theme?: {
     mode?: 'dark' | 'light' | 'system';
     accent?: string;

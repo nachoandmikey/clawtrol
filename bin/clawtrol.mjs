@@ -2,7 +2,7 @@
 
 import { createInterface } from 'node:readline';
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, cpSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -211,6 +211,132 @@ function runBuild() {
   child.on('exit', (code) => process.exit(code ?? 0));
 }
 
+// ── Plugin Commands ──────────────────────────────────────────────────
+
+function readConfigPlugins() {
+  const configPath = resolve(process.cwd(), 'clawtrol.config.ts');
+  if (!existsSync(configPath)) {
+    print(yellow('  No clawtrol.config.ts found in current directory.'));
+    process.exit(1);
+  }
+  const content = readFileSync(configPath, 'utf-8');
+  // Extract plugins array from config
+  const match = content.match(/plugins\s*:\s*\[([\s\S]*?)\]/);
+  if (!match) return [];
+  return match[1].match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) || [];
+}
+
+function writeConfigPlugins(plugins) {
+  const configPath = resolve(process.cwd(), 'clawtrol.config.ts');
+  let content = readFileSync(configPath, 'utf-8');
+  const pluginsStr = plugins.length > 0
+    ? plugins.map(p => `    '${p}',`).join('\n')
+    : '';
+  const pluginsBlock = `plugins: [\n${pluginsStr}\n  ]`;
+
+  if (content.includes('plugins:')) {
+    content = content.replace(/plugins\s*:\s*\[[\s\S]*?\]/, pluginsBlock);
+  } else {
+    // Add plugins before theme
+    content = content.replace(
+      /(theme\s*:)/,
+      `${pluginsBlock},\n\n  $1`
+    );
+  }
+  writeFileSync(configPath, content);
+}
+
+function runPluginAdd(name) {
+  if (!name) {
+    print(yellow('  Usage: clawtrol add <plugin-name>'));
+    process.exit(1);
+  }
+
+  const pkgName = name.startsWith('clawtrol-plugin-') ? name : `clawtrol-plugin-${name}`;
+  const shortName = name.replace(/^clawtrol-plugin-/, '');
+
+  print(dim(`  Installing ${pkgName}...`));
+  try {
+    execSync(`npm install ${pkgName}`, { cwd: process.cwd(), stdio: 'inherit' });
+  } catch {
+    print(yellow(`\n  Failed to install ${pkgName}.`));
+    process.exit(1);
+  }
+
+  // Add to config
+  const plugins = readConfigPlugins();
+  if (!plugins.includes(shortName)) {
+    plugins.push(shortName);
+    writeConfigPlugins(plugins);
+    print(green(`  Added "${shortName}" to clawtrol.config.ts plugins.`));
+  } else {
+    print(dim(`  Plugin "${shortName}" already in config.`));
+  }
+
+  print();
+  print(green(`  Plugin "${shortName}" installed successfully!`));
+  print(dim('  Restart the dev server to load the plugin.'));
+  print();
+}
+
+function runPluginRemove(name) {
+  if (!name) {
+    print(yellow('  Usage: clawtrol remove <plugin-name>'));
+    process.exit(1);
+  }
+
+  const pkgName = name.startsWith('clawtrol-plugin-') ? name : `clawtrol-plugin-${name}`;
+  const shortName = name.replace(/^clawtrol-plugin-/, '');
+
+  // Remove from config
+  const plugins = readConfigPlugins();
+  const idx = plugins.indexOf(shortName);
+  if (idx !== -1) {
+    plugins.splice(idx, 1);
+    writeConfigPlugins(plugins);
+    print(green(`  Removed "${shortName}" from clawtrol.config.ts plugins.`));
+  } else {
+    print(dim(`  Plugin "${shortName}" not found in config.`));
+  }
+
+  print(dim(`  Uninstalling ${pkgName}...`));
+  try {
+    execSync(`npm uninstall ${pkgName}`, { cwd: process.cwd(), stdio: 'inherit' });
+  } catch {
+    print(yellow(`\n  Failed to uninstall ${pkgName}.`));
+  }
+
+  print();
+  print(green(`  Plugin "${shortName}" removed.`));
+  print();
+}
+
+function runPluginsList() {
+  const plugins = readConfigPlugins();
+  print();
+  if (plugins.length === 0) {
+    print(dim('  No plugins installed.'));
+    print();
+    print(`  Use ${cyan('clawtrol add <name>')} to install a plugin.`);
+  } else {
+    print(bold('  Installed plugins:'));
+    print();
+    for (const p of plugins) {
+      const pkgName = `clawtrol-plugin-${p}`;
+      let version = '';
+      try {
+        const pkgPath = resolve(process.cwd(), 'node_modules', pkgName, 'package.json');
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+          version = dim(` v${pkg.version}`);
+        }
+      } catch {}
+      print(`    ${green('●')} ${p}${version}  ${dim(`(${pkgName})`)}`);
+    }
+  }
+  print();
+}
+
 // ── CLI Router ───────────────────────────────────────────────────────
 
 const command = process.argv[2];
@@ -231,12 +357,27 @@ switch (command) {
     runBuild();
     break;
 
+  case 'add':
+    runPluginAdd(process.argv[3]);
+    break;
+
+  case 'remove':
+    runPluginRemove(process.argv[3]);
+    break;
+
+  case 'plugins':
+    runPluginsList();
+    break;
+
   default:
     showBanner();
     print(bold('  Usage:'));
-    print(`    clawtrol ${green('init')}    Create a new Clawtrol project`);
-    print(`    clawtrol ${green('dev')}     Start the dev server`);
-    print(`    clawtrol ${green('build')}   Build for production`);
+    print(`    clawtrol ${green('init')}              Create a new Clawtrol project`);
+    print(`    clawtrol ${green('dev')}               Start the dev server`);
+    print(`    clawtrol ${green('build')}             Build for production`);
+    print(`    clawtrol ${green('add')} ${dim('<plugin>')}     Install a plugin`);
+    print(`    clawtrol ${green('remove')} ${dim('<plugin>')}  Remove a plugin`);
+    print(`    clawtrol ${green('plugins')}           List installed plugins`);
     print();
     if (command) {
       print(yellow(`  Unknown command: "${command}"`));

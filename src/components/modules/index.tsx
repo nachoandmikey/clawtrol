@@ -21,3 +21,11 @@ export const MODULE_COMPONENTS: Record<ModuleId, ComponentType> = {
   network:    dynamic(() => import('./NetworkModule'),    { loading: Loading }),
   subagents:  dynamic(() => import('./SubagentsModule'),  { loading: Loading }),
 };
+
+// Register all widget manifests
+import './OverviewModule/widgets';
+import './MemoryModule/widgets';
+import './TasksModule/widgets';
+import './SessionsModule/widgets';
+import './ScreenModule/widgets';
+import './CronModule/widgets';
