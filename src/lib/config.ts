@@ -56,7 +56,7 @@ export const defaultConfig: ClawtrolConfig = {
     preset: 'nova',
     accent: '#3b82f6',
   },
-  port: 3001,
+  port: 4781,
 };
 
 // Module metadata for the setup wizard and tab rendering

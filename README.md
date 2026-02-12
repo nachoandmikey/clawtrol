@@ -14,7 +14,7 @@ cd my-dashboard
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001).
+Open [http://localhost:4781](http://localhost:4781).
 
 > The setup wizard walks you through project name, modules, theme, and API config — then scaffolds everything for you.
 
@@ -37,14 +37,14 @@ npm run dev
 
 ### Production (daemon via pm2)
 ```bash
-npm start          # build + start on port 3001 (or next available)
+npm start          # build + start on port 4781 (or next available)
 npm run status     # check if running
 npm run logs       # view logs
 npm run restart    # restart
 npm stop           # stop and remove from pm2
 ```
 
-> pm2 is included with OpenClaw. Clawtrol auto-detects a free port if 3001 is taken.
+> pm2 is included with OpenClaw. Clawtrol auto-detects a free port if 4781 is taken.
 
 ## ✨ Features
 
@@ -90,7 +90,7 @@ const config: ClawtrolConfig = {
     configPath: '~/.openclaw/config.json',
   },
 
-  port: 3001,
+  port: 4781,
 };
 ```
 
@@ -158,14 +158,14 @@ Clawtrol is built for headless machines. The recommended way to access it remote
 
 4. **Access Clawtrol** from anywhere on your tailnet:
    ```
-   http://100.64.0.2:3001
+   http://100.64.0.2:4781
    ```
 
 ### Optional: MagicDNS
 
 With [MagicDNS](https://tailscale.com/kb/1081/magicdns) enabled, access your dashboard by machine name:
 ```
-http://my-mac-mini:3001
+http://my-mac-mini:4781
 ```
 
 ### Optional: HTTPS with Tailscale Certs
@@ -178,7 +178,7 @@ Then configure Next.js to use the generated certs, or put Caddy/nginx in front.
 
 ### Security Note
 
-Clawtrol has **no built-in auth** — it assumes you're accessing it over a trusted network (like Tailscale). Don't expose port 3001 to the public internet without adding authentication.
+Clawtrol has **no built-in auth** — it assumes you're accessing it over a trusted network (like Tailscale). Don't expose port 4781 to the public internet without adding authentication.
 
 ## 🎨 Themes
 

@@ -174,7 +174,7 @@ ${modulesStr}
     gatewayPort: ${gatewayPort},
   },
 
-  port: 3001,
+  port: 4781,
 };
 
 export default config;
@@ -199,7 +199,7 @@ export default config;
     print(`    cd ${projectName}`);
     print(`    npm run dev`);
     print();
-    print(dim(`  Then open http://localhost:3001`));
+    print(dim(`  Then open http://localhost:4781`));
     print();
   } catch (err) {
     rl.close();

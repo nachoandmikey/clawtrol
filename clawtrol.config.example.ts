@@ -39,7 +39,7 @@ const config: ClawtrolConfig = {
   },
 
   // Dashboard port
-  port: 3001,
+  port: 4781,
 };
 
 export default config;

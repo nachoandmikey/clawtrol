@@ -77,7 +77,7 @@ function shouldBuild() {
   return getMtimeSafe(nextDir) < getMtimeSafe(srcDir);
 }
 
-function findFreePort(start = 3001) {
+function findFreePort(start = 4781) {
   return new Promise((resolvePort) => {
     const server = createServer();
     server.listen(start, () => {
@@ -119,7 +119,7 @@ async function start() {
     console.log('✅ Build is up to date, skipping next build');
   }
 
-  const requestedPort = parsePortFlag() ?? readConfigPort() ?? 3001;
+  const requestedPort = parsePortFlag() ?? readConfigPort() ?? 4781;
   const port = await findFreePort(requestedPort);
 
   run('pm2', ['delete', APP_NAME], { allowFail: true });
