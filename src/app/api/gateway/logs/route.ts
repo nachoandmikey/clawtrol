@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import os from 'os';
 import path from 'path';
-
-const execAsync = promisify(exec);
+import { execSafe, validateInput, NUMERIC } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const lines = parseInt(searchParams.get('lines') || '100');
+    const linesParam = searchParams.get('lines') || '100';
     const logType = searchParams.get('type') || 'all'; // 'out', 'err', 'all'
+    
+    // Validate lines is numeric
+    validateInput(linesParam, NUMERIC, 'lines');
+    const lines = Math.min(parseInt(linesParam), 500).toString();
     
     const logDir = path.join(os.homedir(), '.openclaw', 'logs');
     let logs = '';
 
     if (logType === 'err' || logType === 'all') {
       try {
-        const { stdout } = await execAsync(`tail -n ${Math.min(lines, 500)} ${logDir}/gateway.err.log`);
+        const { stdout } = await execSafe('tail', ['-n', lines, path.join(logDir, 'gateway.err.log')]);
         if (logType === 'all') logs += '=== STDERR ===\n';
         logs += stdout;
       } catch {}
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
 
     if (logType === 'out' || logType === 'all') {
       try {
-        const { stdout } = await execAsync(`tail -n ${Math.min(lines, 500)} ${logDir}/gateway.log`);
+        const { stdout } = await execSafe('tail', ['-n', lines, path.join(logDir, 'gateway.log')]);
         if (logType === 'all') logs += '\n=== STDOUT ===\n';
         logs += stdout;
       } catch {}

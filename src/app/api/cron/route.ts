@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { readFile, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
-
-const execAsync = promisify(exec);
+import { execSafe, validateInput, ALPHANUM_DASH } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,10 +31,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing action or id' }, { status: 400 });
     }
 
+    // Validate id format
+    const safeId = validateInput(id, ALPHANUM_DASH, 'cron job id');
+
     switch (action) {
       case 'toggle': {
         const data = JSON.parse(await readFile(CRON_FILE, 'utf-8'));
-        const job = data.jobs.find((j: any) => j.id === id);
+        const job = data.jobs.find((j: any) => j.id === safeId);
         if (job) {
           job.enabled = !job.enabled;
           job.updatedAtMs = Date.now();
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
       case 'trigger':
         try {
-          await execAsync(`openclaw cron run "${id}"`, { timeout: 10000 });
+          await execSafe('openclaw', ['cron', 'run', safeId], { timeout: 10000 });
           return NextResponse.json({ success: true, message: 'Job triggered' });
         } catch (error) {
           console.error('Failed to trigger job:', error);
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
       case 'delete': {
         const delData = JSON.parse(await readFile(CRON_FILE, 'utf-8'));
-        const jobIndex = delData.jobs.findIndex((j: any) => j.id === id);
+        const jobIndex = delData.jobs.findIndex((j: any) => j.id === safeId);
         if (jobIndex >= 0) {
           delData.jobs.splice(jobIndex, 1);
           await writeFile(CRON_FILE, JSON.stringify(delData, null, 2));

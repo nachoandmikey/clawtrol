@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execSafe, validateInput, NUMERIC } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,14 +11,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'PID required' }, { status: 400 });
     }
 
+    // Validate PID is numeric
+    const safePid = validateInput(String(pid), NUMERIC, 'PID');
+    const pidNum = parseInt(safePid);
+
     // Safety: don't kill PID 1 or critical system processes
-    const pidNum = parseInt(pid);
     if (pidNum <= 1) {
       return NextResponse.json({ error: 'Cannot kill system processes' }, { status: 400 });
     }
 
     const sig = signal === 'KILL' ? '-9' : '-15';
-    await execAsync(`kill ${sig} ${pidNum}`, { timeout: 5000 });
+    await execSafe('kill', [sig, safePid], { timeout: 5000 });
 
     return NextResponse.json({ success: true, message: `Sent ${signal} to PID ${pid}` });
   } catch (error) {
